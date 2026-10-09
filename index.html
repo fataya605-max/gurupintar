@@ -10,7 +10,8 @@ body{margin:0;font-family:Arial,sans-serif;background:#f1f6f3;color:#20382d}
 header{background:#176b50;color:white;padding:22px}
 header h1{margin:0 0 8px}
 nav{display:flex;gap:8px;flex-wrap:wrap;padding:12px;background:white}
-button{border:0;border-radius:7px;padding:11px 14px;cursor:pointer;margin:3px}
+button{border:0;border-radius:7px;padding:11px 14px;cursor:pointer;margin:3px;font:inherit}
+button:disabled{opacity:.55;cursor:not-allowed}
 .primary,.active{background:#176b50;color:white}
 .secondary{background:#e1eee6;color:#234b39}
 .danger{background:#ffe7e4;color:#9c3026}
@@ -20,23 +21,32 @@ label{display:block;font-weight:bold;margin:12px 0 6px}
 input,select,textarea{width:100%;padding:11px;border:1px solid #ccd8d0;border-radius:7px;font:inherit}
 textarea{min-height:75px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{border:1px solid #dce7df;padding:12px;border-radius:8px;margin:12px 0}
-.option{display:flex;gap:8px;align-items:start;margin:12px 0}
+.card{border:1px solid #dce7df;padding:12px;border-radius:8px;margin:12px 0;overflow-wrap:anywhere}
+.option{display:flex;gap:8px;align-items:flex-start;margin:12px 0}
 .option input{width:auto;margin-top:3px}
 .option span{flex:1}
 .small{font-size:13px;color:#63736a}
-.hidden{display:none}
+.hidden{display:none!important}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:#eaf4ed;padding:13px;border-radius:8px}
 .stat strong{display:block;font-size:23px;margin-top:8px}
 table{border-collapse:collapse;width:100%;margin-top:15px}
 th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
-@media(max-width:550px){.grid,.stats{grid-template-columns:1fr}}
+.table-wrap{overflow-x:auto}
+.notice{padding:12px;border-radius:8px;background:#eaf4ed}
+@media(max-width:550px){
+ .grid,.stats{grid-template-columns:1fr}
+ header h1{font-size:25px}
+ .panel{padding:14px}
+}
 @media print{
- nav,.no-print,header p,footer{display:none!important}
- body{background:white}
- main{margin:0;padding:0}
- .panel{box-shadow:none;padding:4px}
+ nav,.no-print,footer{display:none!important}
+ body{background:white;color:black}
+ main{margin:0;padding:0;max-width:none}
+ .page.hidden{display:none!important}
+ .page:not(.hidden){display:block!important}
+ .panel{box-shadow:none;padding:4px;break-inside:avoid}
+ button{display:none!important}
 }
 </style>
 </head>
@@ -45,6 +55,7 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 <h1>📚 GuruPintar</h1>
 <p>Website pembuat soal, ujian, dan rekap nilai guru.</p>
 </header>
+
 <nav class="no-print">
 <button class="active" data-page="buat">Buat Soal</button>
 <button data-page="ujian">Lembar Ujian</button>
@@ -56,29 +67,41 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 <div class="panel">
 <h2>Pengaturan Ujian</h2>
 <div class="grid">
-<div><label>Mata pelajaran</label><input id="mapel" placeholder="Contoh: PJOK"></div>
-<div><label>Kelas</label>
-<select id="kelas">
-<option>1</option><option>2</option><option selected>3</option>
-<option>4</option><option>5</option><option>6</option>
-</select></div>
+<div>
+<label for="mapel">Mata pelajaran</label>
+<input id="mapel" placeholder="Contoh: PJOK">
 </div>
-<label>Judul ujian</label><input id="judul" placeholder="Contoh: Latihan Bab 1">
+<div>
+<label for="kelas">Kelas</label>
+<select id="kelas">
+<option>1</option><option>2</option><option>3</option>
+<option>4</option><option>5</option><option>6</option>
+<option>SMP</option><option>SMA</option><option>SMK</option>
+<option>Perguruan Tinggi</option><option>Umum</option>
+</select>
+</div>
+</div>
+<label for="judul">Judul ujian</label>
+<input id="judul" placeholder="Contoh: Latihan Bab 1">
+<p class="small">Pengaturan akan disimpan pada browser perangkat ini.</p>
 </div>
 
 <div class="panel">
 <h2>Tambah Soal Pilihan Ganda</h2>
-<label>Pertanyaan</label><textarea id="tanya" placeholder="Tulis pertanyaan di sini"></textarea>
+<label for="tanya">Pertanyaan</label>
+<textarea id="tanya" placeholder="Tulis pertanyaan di sini"></textarea>
 <div class="grid">
-<div><label>Pilihan A</label><input id="A"></div>
-<div><label>Pilihan B</label><input id="B"></div>
-<div><label>Pilihan C</label><input id="C"></div>
-<div><label>Pilihan D</label><input id="D"></div>
+<div><label for="A">Pilihan A</label><input id="A"></div>
+<div><label for="B">Pilihan B</label><input id="B"></div>
+<div><label for="C">Pilihan C</label><input id="C"></div>
+<div><label for="D">Pilihan D</label><input id="D"></div>
 </div>
-<label>Kunci jawaban</label>
-<select id="kunci"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-<p><button class="primary" id="tambah">+ Tambahkan Soal</button></p>
-<p id="pesan" class="small"></p>
+<label for="kunci">Kunci jawaban</label>
+<select id="kunci">
+<option>A</option><option>B</option><option>C</option><option>D</option>
+</select>
+<button class="primary" id="tambah">+ Tambahkan Soal</button>
+<p id="pesan" class="small" role="status"></p>
 </div>
 
 <div class="panel">
@@ -86,21 +109,24 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 <div id="daftar"></div>
 <button class="secondary no-print" id="simpan">Simpan Ujian</button>
 <button class="danger no-print" id="hapusSemua">Hapus Semua Soal</button>
-<p class="small">Data tersimpan di browser perangkat ini.</p>
 </div>
 </section>
 
 <section id="ujian" class="page hidden">
 <div class="panel">
-<h2 id="judulLembar">Lembar Ujian</h2><p id="info"></p>
-<label>Nama siswa</label><input id="nama" placeholder="Nama lengkap siswa">
-<label>Kelas siswa</label><input id="kelasSiswa" placeholder="Contoh: 3A">
+<h2 id="judulLembar">Lembar Ujian</h2>
+<p id="info"></p>
+<label for="nama">Nama siswa</label>
+<input id="nama" placeholder="Nama lengkap siswa">
+<label for="kelasSiswa">Kelas siswa</label>
+<input id="kelasSiswa" placeholder="Contoh: 3A">
 </div>
 <div class="panel">
 <div id="lembar"></div>
 <button class="primary no-print" id="kumpul">Kumpulkan & Hitung Nilai</button>
+<button class="secondary no-print" id="ujianBaru" disabled>Mulai Pengerjaan Baru</button>
 <button class="secondary no-print" id="cetak">Cetak Lembar Ujian</button>
-<div id="hasil"></div>
+<div id="hasil" aria-live="polite"></div>
 </div>
 </section>
 
@@ -108,7 +134,7 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 <div class="panel">
 <h2>Rekap Nilai Siswa</h2>
 <div class="stats">
-<div class="stat">Jumlah siswa<strong id="total">0</strong></div>
+<div class="stat">Jumlah pengerjaan<strong id="total">0</strong></div>
 <div class="stat">Rata-rata<strong id="rata">0</strong></div>
 <div class="stat">Nilai tertinggi<strong id="tinggi">0</strong></div>
 </div>
@@ -119,153 +145,430 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 </div>
 </section>
 </main>
-<footer style="text-align:center;padding:20px" class="small">GuruPintar · Alat bantu guru Indonesia</footer>
+
+<footer style="text-align:center;padding:20px" class="small">
+GuruPintar · Alat bantu guru Indonesia
+</footer>
 
 <script>
+"use strict";
+
 const $ = id => document.getElementById(id);
+const STORAGE_KEY = "gp_data";
 let soal = [];
 let nilai = [];
+let attemptId = "";
+let submittedAttemptId = "";
+let meta = {mapel:"", kelas:"3", judul:""};
 
-try {
-  soal = JSON.parse(localStorage.getItem("gp_soal") || "[]");
-  nilai = JSON.parse(localStorage.getItem("gp_nilai") || "[]");
-  if (!Array.isArray(soal)) soal = [];
-  if (!Array.isArray(nilai)) nilai = [];
-} catch(e) { soal=[]; nilai=[]; }
+function buatId(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
 
-function aman(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
+function aman(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   })[c]);
 }
-function simpanData() {
-  try {
-    localStorage.setItem("gp_soal",JSON.stringify(soal));
-    localStorage.setItem("gp_nilai",JSON.stringify(nilai));
+
+function bacaData(){
+  try{
+    const baru = localStorage.getItem(STORAGE_KEY);
+
+    if(baru){
+      const d = JSON.parse(baru);
+      if(d && typeof d === "object"){
+        soal = Array.isArray(d.soal) ? d.soal : [];
+        nilai = Array.isArray(d.nilai) ? d.nilai : [];
+        meta = {...meta, ...(d.meta || {})};
+        attemptId = d.attemptId || buatId();
+        submittedAttemptId = d.submittedAttemptId || "";
+        return;
+      }
+    }
+
+    // Migrasi data dari versi GuruPintar sebelumnya.
+    soal = JSON.parse(localStorage.getItem("gp_soal") || "[]");
+    nilai = JSON.parse(localStorage.getItem("gp_nilai") || "[]");
+    if(!Array.isArray(soal)) soal = [];
+    if(!Array.isArray(nilai)) nilai = [];
+
+    attemptId = buatId();
+
+    // Pengaturan lama belum tersimpan, jadi gunakan nilai default.
+    meta = {mapel:"", kelas:"3", judul:""};
+
+    simpanData();
+  }catch(e){
+    soal = [];
+    nilai = [];
+    attemptId = buatId();
+    submittedAttemptId = "";
+    meta = {mapel:"", kelas:"3", judul:""};
+    $("pesan").textContent =
+      "Data tidak dapat dibaca. Periksa penyimpanan browser.";
+  }
+}
+
+function simpanData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      soal, nilai, meta, attemptId, submittedAttemptId
+    }));
     return true;
-  } catch(e) {
-    alert("Gagal menyimpan data di browser.");
+  }catch(e){
+    alert("Data gagal disimpan. Periksa ruang penyimpanan browser.");
     return false;
   }
 }
-function infoUjian() {
+
+function ambilMeta(){
   return {
     mapel:$("mapel").value.trim(),
     kelas:$("kelas").value,
     judul:$("judul").value.trim()
   };
 }
-function tampilSoal() {
-  $("jumlah").textContent=soal.length;
-  $("daftar").innerHTML=soal.length ? soal.map((s,i)=>`
+
+function simpanMeta(){
+  const lama = {...meta};
+  meta = ambilMeta();
+  if(!simpanData()){
+    meta = lama;
+    $("mapel").value = meta.mapel;
+    $("kelas").value = meta.kelas;
+    $("judul").value = meta.judul;
+  }
+}
+
+["mapel","kelas","judul"].forEach(id=>{
+  $(id).addEventListener("change", simpanMeta);
+});
+
+function tampilSoal(){
+  $("jumlah").textContent = soal.length;
+
+  $("daftar").innerHTML = soal.length ? soal.map((s,i)=>`
     <div class="card">
       <b>${i+1}. ${aman(s.tanya)}</b>
       <p class="small">
-      A. ${aman(s.opsi.A)}<br>B. ${aman(s.opsi.B)}<br>
-      C. ${aman(s.opsi.C)}<br>D. ${aman(s.opsi.D)}
+        A. ${aman(s.opsi.A)}<br>
+        B. ${aman(s.opsi.B)}<br>
+        C. ${aman(s.opsi.C)}<br>
+        D. ${aman(s.opsi.D)}
       </p>
       <p class="small">Kunci: ${aman(s.kunci)}</p>
       <button class="danger no-print" data-hapus="${i}">Hapus soal</button>
-    </div>`).join("") : "<p>Belum ada soal.</p>";
+    </div>
+  `).join("") : "<p>Belum ada soal.</p>";
 
   document.querySelectorAll("[data-hapus]").forEach(b=>{
-    b.onclick=()=>{
-      soal.splice(Number(b.dataset.hapus),1);
-      simpanData(); tampilSoal(); tampilUjian();
+    b.onclick = ()=>{
+      const i = Number(b.dataset.hapus);
+      if(!confirm("Hapus soal ini?")) return;
+
+      const lama = [...soal];
+      soal.splice(i,1);
+      if(!simpanData()){
+        soal = lama;
+        return;
+      }
+
+      tampilSoal();
+      tampilUjian();
     };
   });
 }
-$("tambah").onclick=()=>{
-  const tanya=$("tanya").value.trim();
-  const opsi={A:$("A").value.trim(),B:$("B").value.trim(),
-              C:$("C").value.trim(),D:$("D").value.trim()};
+
+$("tambah").onclick = ()=>{
+  const tanya = $("tanya").value.trim();
+  const opsi = {
+    A:$("A").value.trim(),
+    B:$("B").value.trim(),
+    C:$("C").value.trim(),
+    D:$("D").value.trim()
+  };
+
   if(!tanya || Object.values(opsi).some(x=>!x)){
-    $("pesan").textContent="Lengkapi pertanyaan dan semua pilihan A–D.";
+    $("pesan").textContent = "Lengkapi pertanyaan dan pilihan A–D.";
     return;
   }
-  soal.push({tanya,opsi,kunci:$("kunci").value});
-  $("tanya").value="";
-  ["A","B","C","D"].forEach(x=>$(x).value="");
-  $("pesan").textContent="Soal berhasil ditambahkan.";
-  simpanData(); tampilSoal(); tampilUjian();
-};
-$("simpan").onclick=()=>{
-  if(simpanData()) alert("Soal tersimpan di browser ini.");
-};
-$("hapusSemua").onclick=()=>{
-  if(confirm("Hapus semua soal?")){
-    soal=[]; simpanData(); tampilSoal(); tampilUjian();
+
+  const lama = [...soal];
+  soal.push({tanya, opsi, kunci:$("kunci").value});
+
+  if(!simpanData()){
+    soal = lama;
+    return;
   }
+
+  $("tanya").value = "";
+  ["A","B","C","D"].forEach(x=>$(x).value="");
+  $("pesan").textContent = "Soal berhasil ditambahkan dan disimpan.";
+
+  tampilSoal();
+  tampilUjian();
 };
-function tampilUjian(){
-  const meta=infoUjian();
-  $("judulLembar").textContent=meta.judul||"Lembar Ujian";
-  $("info").textContent="Mata pelajaran: "+(meta.mapel||"-")+" | Kelas: "+meta.kelas;
-  $("lembar").innerHTML=soal.length ? soal.map((s,i)=>`
-    <div class="card">
-      <b>${i+1}. ${aman(s.tanya)}</b>
-      ${["A","B","C","D"].map(k=>`
-        <label class="option">
-          <input type="radio" name="jawab${i}" value="${k}">
-          <span>${k}. ${aman(s.opsi[k])}</span>
-        </label>`).join("")}
-    </div>`).join("") : "<p>Belum ada soal. Buat soal terlebih dahulu.</p>";
+
+$("simpan").onclick = ()=>{
+  simpanMeta();
+  if(simpanData()) alert("Pengaturan, soal, dan nilai berhasil disimpan.");
+};
+
+$("hapusSemua").onclick = ()=>{
+  if(!confirm("Hapus semua soal? Rekap nilai lama tidak ikut dihapus.")) return;
+
+  const lama = [...soal];
+  soal = [];
+
+  if(!simpanData()){
+    soal = lama;
+    return;
+  }
+
+  tampilSoal();
+  tampilUjian();
+};
+
+function kunciPengumpulan(){
+  const sudah = submittedAttemptId === attemptId;
+  $("kumpul").disabled = sudah;
+  $("kumpul").textContent = sudah
+    ? "Ujian Sudah Dikumpulkan"
+    : "Kumpulkan & Hitung Nilai";
+  $("ujianBaru").disabled = !sudah;
 }
-$("kumpul").onclick=()=>{
-  if(!soal.length){alert("Buat soal terlebih dahulu.");return;}
-  const nama=$("nama").value.trim();
-  const kelas=$("kelasSiswa").value.trim();
-  if(!nama||!kelas){alert("Isi nama dan kelas siswa.");return;}
-  const jawaban=soal.map((s,i)=>{
-    const dipilih=document.querySelector('input[name="jawab'+i+'"]:checked');
-    return dipilih?dipilih.value:"";
+
+function tampilUjian(){
+  $("judulLembar").textContent = meta.judul || "Lembar Ujian";
+  $("info").textContent =
+    "Mata pelajaran: " + (meta.mapel || "-") +
+    " | Kelas: " + (meta.kelas || "-");
+
+  // Jangan menghapus jawaban atau membuka kembali ujian yang sudah dikumpulkan.
+  const sudah = submittedAttemptId === attemptId;
+
+  if(!sudah || !$("lembar").innerHTML){
+    $("lembar").innerHTML = soal.length ? soal.map((s,i)=>`
+      <div class="card">
+        <b>${i+1}. ${aman(s.tanya)}</b>
+        ${["A","B","C","D"].map(k=>`
+          <label class="option">
+            <input type="radio" name="jawab${i}" value="${k}" ${sudah?"disabled":""}>
+            <span>${k}. ${aman(s.opsi[k])}</span>
+          </label>
+        `).join("")}
+      </div>
+    `).join("") : "<p>Belum ada soal. Buat soal terlebih dahulu.</p>";
+  }
+
+  kunciPengumpulan();
+}
+
+$("kumpul").onclick = ()=>{
+  if(submittedAttemptId === attemptId){
+    alert("Pengerjaan ini sudah dikumpulkan. Nilai tidak ditambahkan lagi.");
+    kunciPengumpulan();
+    return;
+  }
+
+  if(!soal.length){
+    alert("Buat soal terlebih dahulu.");
+    return;
+  }
+
+  const nama = $("nama").value.trim();
+  const kelasSiswa = $("kelasSiswa").value.trim();
+
+  if(!nama || !kelasSiswa){
+    alert("Isi nama dan kelas siswa.");
+    return;
+  }
+
+  // Cegah klik berulang selama proses berjalan.
+  $("kumpul").disabled = true;
+
+  const jawaban = soal.map((s,i)=>{
+    const dipilih = document.querySelector(
+      'input[name="jawab'+i+'"]:checked'
+    );
+    return dipilih ? dipilih.value : "";
   });
-  const benar=soal.reduce((n,s,i)=>n+(jawaban[i]===s.kunci?1:0),0);
-  const skor=Math.round(benar/soal.length*100);
-  nilai.push({nama,kelas,skor,benar,total:soal.length,tanggal:new Date().toLocaleDateString("id-ID")});
-  simpanData();
-  $("hasil").innerHTML=`<div class="card"><h3>Hasil pengerjaan</h3>
-    <p>Nama: ${aman(nama)}</p><p>Jawaban benar: ${benar} dari ${soal.length}</p>
-    <h2>Nilai: ${skor}</h2></div>`;
+
+  const benar = soal.reduce(
+    (n,s,i)=>n+(jawaban[i]===s.kunci?1:0),0
+  );
+  const skor = Math.round(benar / soal.length * 100);
+
+  const catatan = {
+    id:attemptId,
+    nama,
+    kelas:kelasSiswa,
+    mapel:meta.mapel,
+    kelasUjian:meta.kelas,
+    judul:meta.judul,
+    skor,
+    benar,
+    total:soal.length,
+    tanggal:new Date().toLocaleDateString("id-ID")
+  };
+
+  const nilaiLama = [...nilai];
+  const statusLama = submittedAttemptId;
+
+  nilai.push(catatan);
+  submittedAttemptId = attemptId;
+
+  // Simpan skor dan tanda pengumpulan bersama dalam satu catatan data.
+  if(!simpanData()){
+    nilai = nilaiLama;
+    submittedAttemptId = statusLama;
+    kunciPengumpulan();
+    return;
+  }
+
+  // Kunci jawaban setelah penyimpanan berhasil.
+  document.querySelectorAll('#lembar input[type="radio"]')
+    .forEach(input=>input.disabled=true);
+
+  $("hasil").innerHTML = `
+    <div class="card">
+      <h3>Hasil pengerjaan</h3>
+      <p>Nama: ${aman(nama)}</p>
+      <p>Kelas: ${aman(kelasSiswa)}</p>
+      <p>Mata pelajaran: ${aman(meta.mapel || "-")}</p>
+      <p>Jawaban benar: ${benar} dari ${soal.length}</p>
+      <h2>Nilai: ${skor}/100</h2>
+      <p class="small">Nilai berhasil disimpan di browser ini.</p>
+    </div>
+  `;
+
+  kunciPengumpulan();
   tampilNilai();
 };
+
+$("ujianBaru").onclick = ()=>{
+  if(submittedAttemptId !== attemptId) return;
+
+  if(!confirm("Mulai pengerjaan baru? Nilai sebelumnya tetap tersimpan.")) return;
+
+  const idLama = attemptId;
+  attemptId = buatId();
+
+  if(!simpanData()){
+    attemptId = idLama;
+    return;
+  }
+
+  $("nama").value = "";
+  $("kelasSiswa").value = "";
+  $("hasil").innerHTML = "";
+  $("lembar").innerHTML = "";
+  tampilUjian();
+};
+
 function tampilNilai(){
-  $("total").textContent=nilai.length;
-  $("rata").textContent=nilai.length?Math.round(nilai.reduce((n,x)=>n+x.skor,0)/nilai.length):0;
-  $("tinggi").textContent=nilai.length?Math.max(...nilai.map(x=>x.skor)):0;
-  $("tabel").innerHTML=nilai.length?`
-    <table><thead><tr><th>Nama</th><th>Kelas</th><th>Nilai</th><th>Tanggal</th></tr></thead>
-    <tbody>${nilai.map(x=>`<tr><td>${aman(x.nama)}</td><td>${aman(x.kelas)}</td>
-    <td>${x.skor}</td><td>${aman(x.tanggal)}</td></tr>`).join("")}</tbody></table>`
-    :"<p>Belum ada nilai siswa.</p>";
+  $("total").textContent = nilai.length;
+
+  $("rata").textContent = nilai.length
+    ? Math.round(nilai.reduce((n,x)=>n+Number(x.skor||0),0)/nilai.length)
+    : 0;
+
+  $("tinggi").textContent = nilai.length
+    ? Math.max(...nilai.map(x=>Number(x.skor||0)))
+    : 0;
+
+  const urut = [...nilai].sort((a,b)=>
+    Number(b.skor||0)-Number(a.skor||0)
+  );
+
+  $("tabel").innerHTML = nilai.length ? `
+    <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Peringkat</th><th>Nama</th><th>Kelas</th>
+        <th>Ujian</th><th>Nilai</th><th>Tanggal</th>
+      </tr></thead>
+      <tbody>
+      ${urut.map((x,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${aman(x.nama)}</td>
+          <td>${aman(x.kelas)}</td>
+          <td>${aman(x.judul || "-")}</td>
+          <td>${Number(x.skor)||0}</td>
+          <td>${aman(x.tanggal)}</td>
+        </tr>
+      `).join("")}
+      </tbody>
+    </table>
+    </div>
+  ` : "<p>Belum ada nilai siswa.</p>";
 }
+
 document.querySelectorAll("[data-page]").forEach(b=>{
-  b.onclick=()=>{
+  b.onclick = ()=>{
     document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
     $(b.dataset.page).classList.remove("hidden");
+
     document.querySelectorAll("[data-page]").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
-    if(b.dataset.page==="ujian")tampilUjian();
-    if(b.dataset.page==="nilai")tampilNilai();
+
+    if(b.dataset.page === "ujian") tampilUjian();
+    if(b.dataset.page === "nilai") tampilNilai();
   };
 });
-$("cetak").onclick=()=>window.print();
-$("cetakNilai").onclick=()=>window.print();
-$("hapusNilai").onclick=()=>{
-  if(confirm("Hapus seluruh rekap nilai?")){
-    nilai=[];simpanData();tampilNilai();
+
+$("cetak").onclick = ()=>window.print();
+$("cetakNilai").onclick = ()=>window.print();
+
+$("hapusNilai").onclick = ()=>{
+  if(!confirm("Hapus seluruh rekap nilai? Tindakan ini tidak dapat dibatalkan.")) return;
+
+  const lama = [...nilai];
+  nilai = [];
+
+  if(!simpanData()){
+    nilai = lama;
+    return;
   }
+
+  tampilNilai();
 };
-$("csv").onclick=()=>{
-  const rows=[["Nama","Kelas","Nilai","Benar","Jumlah Soal","Tanggal"],
-    ...nilai.map(x=>[x.nama,x.kelas,x.skor,x.benar,x.total,x.tanggal])];
-  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
-  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;a.download="rekap-nilai-gurupintar.csv";a.click();
-  URL.revokeObjectURL(url);
+
+$("csv").onclick = ()=>{
+  const rows = [[
+    "Nama","Kelas Siswa","Mata Pelajaran","Kelas Ujian",
+    "Judul Ujian","Nilai","Benar","Jumlah Soal","Tanggal"
+  ], ...nilai.map(x=>[
+    x.nama,x.kelas,x.mapel||"",x.kelasUjian||"",
+    x.judul||"",x.skor,x.benar,x.total,x.tanggal
+  ])];
+
+  const csv = rows.map(r=>r.map(v=>
+    '"' + String(v ?? "").replace(/"/g,'""') + '"'
+  ).join(",")).join("\r\n");
+
+  const blob = new Blob(["\uFEFF"+csv],{
+    type:"text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rekap-nilai-gurupintar.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
+
+// Mulai aplikasi dan pulihkan data tersimpan.
+bacaData();
+
+$("mapel").value = meta.mapel || "";
+$("kelas").value = meta.kelas || "3";
+$("judul").value = meta.judul || "";
+
 tampilSoal();
 tampilUjian();
 tampilNilai();
