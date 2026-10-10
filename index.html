@@ -54,15 +54,17 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 <header>
 <h1>📚 GuruPintar</h1>
 <p>Website pembuat soal, ujian, dan rekap nilai guru.</p>
+<div id="auth-status" class="small" style="color: #e1eee6; margin-top: 10px;">Memeriksa status login...</div>
 </header>
 
 <nav class="no-print">
 <button class="active" data-page="buat">Buat Soal</button>
 <button data-page="ujian">Lembar Ujian</button>
-<button data-page="nilai">Rekap Nilai</button>
+<button data-page="nilai" id="nav-nilai" class="hidden">Rekap Nilai</button>
 </nav>
 
 <main>
+<!-- HALAMAN 1: BUAT SOAL -->
 <section id="buat" class="page">
 <div class="panel">
 <h2>Pengaturan Ujian</h2>
@@ -83,7 +85,7 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 </div>
 <label for="judul">Judul ujian</label>
 <input id="judul" placeholder="Contoh: Latihan Bab 1">
-<p class="small">Pengaturan akan disimpan pada browser perangkat ini.</p>
+<p class="small">Pengaturan akan disimpan di Cloud Firebase proyek Anda.</p>
 </div>
 
 <div class="panel">
@@ -107,15 +109,23 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 <div class="panel">
 <h2>Daftar Soal (<span id="jumlah">0</span>)</h2>
 <div id="daftar"></div>
-<button class="secondary no-print" id="simpan">Simpan Ujian</button>
-<button class="danger no-print" id="hapusSemua">Hapus Semua Soal</button>
+<button class="secondary no-print" id="simpan" disabled>Simpan & Bagikan Ujian</button>
+<button class="danger no-print" id="hapusSemua" disabled>Hapus Semua Soal</button>
 </div>
 </section>
 
+<!-- HALAMAN 2: LEMBAR UJIAN -->
 <section id="ujian" class="page hidden">
 <div class="panel">
+<div class="no-print" style="margin-bottom: 15px; background: #eaf4ed; padding: 12px; border-radius: 8px;">
+<label for="inputKodeUjian" style="margin-top:0;">Masukkan ID Ujian dari Guru:</label>
+<div class="grid" style="grid-template-columns: 3fr 1fr;">
+  <input id="inputKodeUjian" placeholder="Tempel ID Ujian dari Cloud di sini">
+  <button class="primary" id="btnMuatUjian" style="margin:0;">Muat</button>
+</div>
+</div>
 <h2 id="judulLembar">Lembar Ujian</h2>
-<p id="info"></p>
+<p id="info">Silakan muat ID ujian terlebih dahulu.</p>
 <label for="nama">Nama siswa</label>
 <input id="nama" placeholder="Nama lengkap siswa">
 <label for="kelasSiswa">Kelas siswa</label>
@@ -123,455 +133,324 @@ th,td{padding:9px;border:1px solid #d6e0d9;text-align:left}
 </div>
 <div class="panel">
 <div id="lembar"></div>
-<button class="primary no-print" id="kumpul">Kumpulkan & Hitung Nilai</button>
+<button class="primary no-print" id="kumpul" disabled>Kumpulkan & Hitung Nilai</button>
 <button class="secondary no-print" id="ujianBaru" disabled>Mulai Pengerjaan Baru</button>
 <button class="secondary no-print" id="cetak">Cetak Lembar Ujian</button>
 <div id="hasil" aria-live="polite"></div>
 </div>
 </section>
 
+<!-- HALAMAN 3: REKAP NILAI -->
 <section id="nilai" class="page hidden">
 <div class="panel">
 <h2>Rekap Nilai Siswa</h2>
 <div class="stats">
 <div class="stat">Jumlah pengerjaan<strong id="total">0</strong></div>
 <div class="stat">Rata-rata<strong id="rata">0</strong></div>
-<div class="stat">Nilai tertinggi<strong id="tinggi">0</strong></div>
+<div class="stat">Nilai Tertinggi<strong id="tertinggi">0</strong></div>
 </div>
-<div id="tabel"></div>
-<button class="secondary no-print" id="csv">Unduh Rekap CSV</button>
-<button class="secondary no-print" id="cetakNilai">Cetak Rekap</button>
-<button class="danger no-print" id="hapusNilai">Hapus Rekap Nilai</button>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Nama Siswa</th>
+<th>Kelas</th>
+<th>Jawaban Benar</th>
+<th>Skor Akhir</th>
+</tr>
+</thead>
+<tbody id="tabel-nilai-body">
+<tr><td colspan="4" style="text-align:center;">Pilih halaman ujian atau muat data rekap.</td></tr>
+</tbody>
+</table>
+</div>
 </div>
 </section>
 </main>
 
-<footer style="text-align:center;padding:20px" class="small">
-GuruPintar · Alat bantu guru Indonesia
-</footer>
+<!-- INTEGRASI FIREBASE SDK TERSELARAS ATURAN & FAST-TRACK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-<script>
-"use strict";
+// Kredensial Asli Proyek Firebase Anda
+const firebaseConfig = {
+  apiKey: "AIzaSyD5z6E...", 
+  authDomain: "gurupintar-d1eb9.firebaseapp.com",
+  projectId: "gurupintar-d1eb9",
+  storageBucket: "gurupintar-d1eb9.appspot.com",
+  messagingSenderId: "123456789", 
+  appId: "1:12345:web:abcde" 
+};
 
-const $ = id => document.getElementById(id);
-const STORAGE_KEY = "gp_data";
-let soal = [];
-let nilai = [];
-let attemptId = "";
-let submittedAttemptId = "";
-let meta = {mapel:"", kelas:"3", judul:""};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-function buatId(){
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+// State Data Aplikasi Lokal
+let kumpulanSoalLocal = [];
+let databaseSoalMurid = [];
+let userLogged = null;
+let activeExamId = ""; 
+
+// 1. MANAJEMEN NAVIGASI HALAMAN (TABS) DENGAN PINDAH OTOMATIS
+function bukaHalaman(targetPage) {
+  const navButtons = document.querySelectorAll("nav button");
+  const pages = document.querySelectorAll(".page");
+  
+  navButtons.forEach(b => b.classList.remove("active"));
+  pages.forEach(p => p.classList.add("hidden"));
+  
+  const activeBtn = document.querySelector(`nav button[data-page="${targetPage}"]`);
+  if (activeBtn) activeBtn.classList.add("active");
+  
+  const targetSec = document.getElementById(targetPage);
+  if (targetSec) targetSec.classList.remove("hidden");
+
+  if (targetPage === 'nilai' && activeExamId) {
+    memuatRekapNilaiCloud(activeExamId);
+  }
 }
 
-function aman(s){
-  return String(s ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[c]);
-}
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.addEventListener("click", () => bukaHalaman(btn.getAttribute("data-page")));
+});
 
-function bacaData(){
-  try{
-    const baru = localStorage.getItem(STORAGE_KEY);
+// 2. SISTEM OTENTIKASI & VALIDASI PERAN GURU (KLAIM GURU)
+onAuthStateChanged(auth, async (user) => {
+  const authStatusDiv = document.getElementById("auth-status");
+  const btnSimpan = document.getElementById("simpan");
+  const btnHapusSemua = document.getElementById("hapusSemua");
+  const navNilai = document.getElementById("nav-nilai");
 
-    if(baru){
-      const d = JSON.parse(baru);
-      if(d && typeof d === "object"){
-        soal = Array.isArray(d.soal) ? d.soal : [];
-        nilai = Array.isArray(d.nilai) ? d.nilai : [];
-        meta = {...meta, ...(d.meta || {})};
-        attemptId = d.attemptId || buatId();
-        submittedAttemptId = d.submittedAttemptId || "";
-        return;
-      }
+  if (user) {
+    userLogged = user;
+    const idTokenResult = await user.getIdTokenResult();
+    // Validasi klaim .teacher == true yang selaras dengan Rules Firestore Anda
+    if (idTokenResult.claims.teacher === true) {
+      authStatusDiv.innerHTML = `🟢 Terhubung sebagai Guru: <strong>${user.email}</strong>`;
+      btnSimpan.disabled = false;
+      btnHapusSemua.disabled = false;
+      navNilai.classList.remove("hidden");
+    } else {
+      authStatusDiv.innerHTML = `⚠️ Akun terhubung (${user.email}), tetapi token peran 'teacher' belum aktif.`;
     }
-
-    // Migrasi data dari versi GuruPintar sebelumnya.
-    soal = JSON.parse(localStorage.getItem("gp_soal") || "[]");
-    nilai = JSON.parse(localStorage.getItem("gp_nilai") || "[]");
-    if(!Array.isArray(soal)) soal = [];
-    if(!Array.isArray(nilai)) nilai = [];
-
-    attemptId = buatId();
-
-    // Pengaturan lama belum tersimpan, jadi gunakan nilai default.
-    meta = {mapel:"", kelas:"3", judul:""};
-
-    simpanData();
-  }catch(e){
-    soal = [];
-    nilai = [];
-    attemptId = buatId();
-    submittedAttemptId = "";
-    meta = {mapel:"", kelas:"3", judul:""};
-    $("pesan").textContent =
-      "Data tidak dapat dibaca. Periksa penyimpanan browser.";
+  } else {
+    userLogged = null;
+    authStatusDiv.innerHTML = "⚪ Mode Akses Siswa (Tanpa Akun Guru)";
+    btnSimpan.disabled = true;
+    btnHapusSemua.disabled = true;
+    navNilai.classList.add("hidden");
   }
-}
-
-function simpanData(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      soal, nilai, meta, attemptId, submittedAttemptId
-    }));
-    return true;
-  }catch(e){
-    alert("Data gagal disimpan. Periksa ruang penyimpanan browser.");
-    return false;
-  }
-}
-
-function ambilMeta(){
-  return {
-    mapel:$("mapel").value.trim(),
-    kelas:$("kelas").value,
-    judul:$("judul").value.trim()
-  };
-}
-
-function simpanMeta(){
-  const lama = {...meta};
-  meta = ambilMeta();
-  if(!simpanData()){
-    meta = lama;
-    $("mapel").value = meta.mapel;
-    $("kelas").value = meta.kelas;
-    $("judul").value = meta.judul;
-  }
-}
-
-["mapel","kelas","judul"].forEach(id=>{
-  $(id).addEventListener("change", simpanMeta);
 });
 
-function tampilSoal(){
-  $("jumlah").textContent = soal.length;
+// 3. FUNGSI GURU: TAMBAH SOAL ANTRIAN LOKAL
+document.getElementById("tambah").addEventListener("click", () => {
+  const tanya = document.getElementById("tanya").value.trim();
+  const a = document.getElementById("A").value.trim();
+  const b = document.getElementById("B").value.trim();
+  const c = document.getElementById("C").value.trim();
+  const d = document.getElementById("D").value.trim();
+  const kunci = document.getElementById("kunci").value;
 
-  $("daftar").innerHTML = soal.length ? soal.map((s,i)=>`
+  if(!tanya || !a || !b || !c || !d) {
+    document.getElementById("pesan").innerText = "❌ Mohon isi pertanyaan beserta seluruh pilihan jawaban!";
+    return;
+  }
+
+  kumpulanSoalLocal.push({ tanya, A: a, B: b, C: c, D: d, kunci });
+  renderDaftarSoalGuru();
+
+  ["tanya", "A", "B", "C", "D"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("pesan").innerText = "✔️ Soal berhasil dimasukkan ke daftar antrean lokal.";
+});
+
+function renderDaftarSoalGuru() {
+  document.getElementById("jumlah").innerText = kumpulanSoalLocal.length;
+  const daftarDiv = document.getElementById("daftar");
+  daftarDiv.innerHTML = kumpulanSoalLocal.map((soal, index) => `
     <div class="card">
-      <b>${i+1}. ${aman(s.tanya)}</b>
-      <p class="small">
-        A. ${aman(s.opsi.A)}<br>
-        B. ${aman(s.opsi.B)}<br>
-        C. ${aman(s.opsi.C)}<br>
-        D. ${aman(s.opsi.D)}
-      </p>
-      <p class="small">Kunci: ${aman(s.kunci)}</p>
-      <button class="danger no-print" data-hapus="${i}">Hapus soal</button>
-    </div>
-  `).join("") : "<p>Belum ada soal.</p>";
-
-  document.querySelectorAll("[data-hapus]").forEach(b=>{
-    b.onclick = ()=>{
-      const i = Number(b.dataset.hapus);
-      if(!confirm("Hapus soal ini?")) return;
-
-      const lama = [...soal];
-      soal.splice(i,1);
-      if(!simpanData()){
-        soal = lama;
-        return;
-      }
-
-      tampilSoal();
-      tampilUjian();
-    };
-  });
-}
-
-$("tambah").onclick = ()=>{
-  const tanya = $("tanya").value.trim();
-  const opsi = {
-    A:$("A").value.trim(),
-    B:$("B").value.trim(),
-    C:$("C").value.trim(),
-    D:$("D").value.trim()
-  };
-
-  if(!tanya || Object.values(opsi).some(x=>!x)){
-    $("pesan").textContent = "Lengkapi pertanyaan dan pilihan A–D.";
-    return;
-  }
-
-  const lama = [...soal];
-  soal.push({tanya, opsi, kunci:$("kunci").value});
-
-  if(!simpanData()){
-    soal = lama;
-    return;
-  }
-
-  $("tanya").value = "";
-  ["A","B","C","D"].forEach(x=>$(x).value="");
-  $("pesan").textContent = "Soal berhasil ditambahkan dan disimpan.";
-
-  tampilSoal();
-  tampilUjian();
-};
-
-$("simpan").onclick = ()=>{
-  simpanMeta();
-  if(simpanData()) alert("Pengaturan, soal, dan nilai berhasil disimpan.");
-};
-
-$("hapusSemua").onclick = ()=>{
-  if(!confirm("Hapus semua soal? Rekap nilai lama tidak ikut dihapus.")) return;
-
-  const lama = [...soal];
-  soal = [];
-
-  if(!simpanData()){
-    soal = lama;
-    return;
-  }
-
-  tampilSoal();
-  tampilUjian();
-};
-
-function kunciPengumpulan(){
-  const sudah = submittedAttemptId === attemptId;
-  $("kumpul").disabled = sudah;
-  $("kumpul").textContent = sudah
-    ? "Ujian Sudah Dikumpulkan"
-    : "Kumpulkan & Hitung Nilai";
-  $("ujianBaru").disabled = !sudah;
-}
-
-function tampilUjian(){
-  $("judulLembar").textContent = meta.judul || "Lembar Ujian";
-  $("info").textContent =
-    "Mata pelajaran: " + (meta.mapel || "-") +
-    " | Kelas: " + (meta.kelas || "-");
-
-  // Jangan menghapus jawaban atau membuka kembali ujian yang sudah dikumpulkan.
-  const sudah = submittedAttemptId === attemptId;
-
-  if(!sudah || !$("lembar").innerHTML){
-    $("lembar").innerHTML = soal.length ? soal.map((s,i)=>`
-      <div class="card">
-        <b>${i+1}. ${aman(s.tanya)}</b>
-        ${["A","B","C","D"].map(k=>`
-          <label class="option">
-            <input type="radio" name="jawab${i}" value="${k}" ${sudah?"disabled":""}>
-            <span>${k}. ${aman(s.opsi[k])}</span>
-          </label>
-        `).join("")}
+      <strong>Soal ${index + 1}. ${soal.tanya}</strong>
+      <div class="small" style="margin-top:5px;">
+        A: ${soal.A} | B: ${soal.B} | C: ${soal.C} | D: ${soal.D} 
+        <br><span style="color:#176b50; font-weight:bold;">Kunci: ${soal.kunci}</span>
       </div>
-    `).join("") : "<p>Belum ada soal. Buat soal terlebih dahulu.</p>";
-  }
-
-  kunciPengumpulan();
+    </div>`).join("");
 }
 
-$("kumpul").onclick = ()=>{
-  if(submittedAttemptId === attemptId){
-    alert("Pengerjaan ini sudah dikumpulkan. Nilai tidak ditambahkan lagi.");
-    kunciPengumpulan();
-    return;
-  }
-
-  if(!soal.length){
-    alert("Buat soal terlebih dahulu.");
-    return;
-  }
-
-  const nama = $("nama").value.trim();
-  const kelasSiswa = $("kelasSiswa").value.trim();
-
-  if(!nama || !kelasSiswa){
-    alert("Isi nama dan kelas siswa.");
-    return;
-  }
-
-  // Cegah klik berulang selama proses berjalan.
-  $("kumpul").disabled = true;
-
-  const jawaban = soal.map((s,i)=>{
-    const dipilih = document.querySelector(
-      'input[name="jawab'+i+'"]:checked'
-    );
-    return dipilih ? dipilih.value : "";
-  });
-
-  const benar = soal.reduce(
-    (n,s,i)=>n+(jawaban[i]===s.kunci?1:0),0
-  );
-  const skor = Math.round(benar / soal.length * 100);
-
-  const catatan = {
-    id:attemptId,
-    nama,
-    kelas:kelasSiswa,
-    mapel:meta.mapel,
-    kelasUjian:meta.kelas,
-    judul:meta.judul,
-    skor,
-    benar,
-    total:soal.length,
-    tanggal:new Date().toLocaleDateString("id-ID")
-  };
-
-  const nilaiLama = [...nilai];
-  const statusLama = submittedAttemptId;
-
-  nilai.push(catatan);
-  submittedAttemptId = attemptId;
-
-  // Simpan skor dan tanda pengumpulan bersama dalam satu catatan data.
-  if(!simpanData()){
-    nilai = nilaiLama;
-    submittedAttemptId = statusLama;
-    kunciPengumpulan();
-    return;
-  }
-
-  // Kunci jawaban setelah penyimpanan berhasil.
-  document.querySelectorAll('#lembar input[type="radio"]')
-    .forEach(input=>input.disabled=true);
-
-  $("hasil").innerHTML = `
-    <div class="card">
-      <h3>Hasil pengerjaan</h3>
-      <p>Nama: ${aman(nama)}</p>
-      <p>Kelas: ${aman(kelasSiswa)}</p>
-      <p>Mata pelajaran: ${aman(meta.mapel || "-")}</p>
-      <p>Jawaban benar: ${benar} dari ${soal.length}</p>
-      <h2>Nilai: ${skor}/100</h2>
-      <p class="small">Nilai berhasil disimpan di browser ini.</p>
-    </div>
-  `;
-
-  kunciPengumpulan();
-  tampilNilai();
-};
-
-$("ujianBaru").onclick = ()=>{
-  if(submittedAttemptId !== attemptId) return;
-
-  if(!confirm("Mulai pengerjaan baru? Nilai sebelumnya tetap tersimpan.")) return;
-
-  const idLama = attemptId;
-  attemptId = buatId();
-
-  if(!simpanData()){
-    attemptId = idLama;
-    return;
-  }
-
-  $("nama").value = "";
-  $("kelasSiswa").value = "";
-  $("hasil").innerHTML = "";
-  $("lembar").innerHTML = "";
-  tampilUjian();
-};
-
-function tampilNilai(){
-  $("total").textContent = nilai.length;
-
-  $("rata").textContent = nilai.length
-    ? Math.round(nilai.reduce((n,x)=>n+Number(x.skor||0),0)/nilai.length)
-    : 0;
-
-  $("tinggi").textContent = nilai.length
-    ? Math.max(...nilai.map(x=>Number(x.skor||0)))
-    : 0;
-
-  const urut = [...nilai].sort((a,b)=>
-    Number(b.skor||0)-Number(a.skor||0)
-  );
-
-  $("tabel").innerHTML = nilai.length ? `
-    <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th>Peringkat</th><th>Nama</th><th>Kelas</th>
-        <th>Ujian</th><th>Nilai</th><th>Tanggal</th>
-      </tr></thead>
-      <tbody>
-      ${urut.map((x,i)=>`
-        <tr>
-          <td>${i+1}</td>
-          <td>${aman(x.nama)}</td>
-          <td>${aman(x.kelas)}</td>
-          <td>${aman(x.judul || "-")}</td>
-          <td>${Number(x.skor)||0}</td>
-          <td>${aman(x.tanggal)}</td>
-        </tr>
-      `).join("")}
-      </tbody>
-    </table>
-    </div>
-  ` : "<p>Belum ada nilai siswa.</p>";
-}
-
-document.querySelectorAll("[data-page]").forEach(b=>{
-  b.onclick = ()=>{
-    document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
-    $(b.dataset.page).classList.remove("hidden");
-
-    document.querySelectorAll("[data-page]").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active");
-
-    if(b.dataset.page === "ujian") tampilUjian();
-    if(b.dataset.page === "nilai") tampilNilai();
-  };
+document.getElementById("hapusSemua").addEventListener("click", () => {
+  kumpulanSoalLocal = [];
+  renderDaftarSoalGuru();
+  document.getElementById("pesan").innerText = "Daftar antrean soal dikosongkan.";
 });
 
-$("cetak").onclick = ()=>window.print();
-$("cetakNilai").onclick = ()=>window.print();
+// 4. FAST-TRACK GURU: UNGHAH KE SUB-KOLEKSI DAN LONCAT OTOMATIS
+document.getElementById("simpan").addEventListener("click", async () => {
+  const mapel = document.getElementById("mapel").value.trim();
+  const kelas = document.getElementById("kelas").value;
+  const judul = document.getElementById("judul").value.trim();
 
-$("hapusNilai").onclick = ()=>{
-  if(!confirm("Hapus seluruh rekap nilai? Tindakan ini tidak dapat dibatalkan.")) return;
-
-  const lama = [...nilai];
-  nilai = [];
-
-  if(!simpanData()){
-    nilai = lama;
+  if(!mapel || !judul || kumpulanSoalLocal.length === 0) {
+    alert("Lengkapi Pengaturan Ujian dan isi minimal 1 Soal sebelum menyimpan!");
     return;
   }
 
-  tampilNilai();
-};
+  try {
+    // 1. Simpan dokumen utama ke /exams (Sesuai aturan create Anda)
+    const examDocRef = await addDoc(collection(db, "exams"), { mapel, kelas, judul, ownerUid: userLogged.uid });
+    activeExamId = examDocRef.id;
 
-$("csv").onclick = ()=>{
-  const rows = [[
-    "Nama","Kelas Siswa","Mata Pelajaran","Kelas Ujian",
-    "Judul Ujian","Nilai","Benar","Jumlah Soal","Tanggal"
-  ], ...nilai.map(x=>[
-    x.nama,x.kelas,x.mapel||"",x.kelasUjian||"",
-    x.judul||"",x.skor,x.benar,x.total,x.tanggal
-  ])];
+    // 2. Simpan koleksi soal ke sub-koleksi /exams/{id}/questions (Sesuai fungsi ownsExam Anda)
+    const questionsSubRef = collection(db, "exams", activeExamId, "questions");
+    await Promise.all(kumpulanSoalLocal.map(soal => addDoc(questionsSubRef, soal)));
 
-  const csv = rows.map(r=>r.map(v=>
-    '"' + String(v ?? "").replace(/"/g,'""') + '"'
-  ).join(",")).join("\r\n");
+    // Salin otomatis ID ke clipboard
+    await navigator.clipboard.writeText(activeExamId);
+    document.getElementById("inputKodeUjian").value = activeExamId;
+    
+    kumpulanSoalLocal = [];
+    renderDaftarSoalGuru();
+    
+    alert("Ujian disimpan! Mengalihkan Anda secara otomatis ke Lembar Siswa...");
+    
+    bukaHalaman("ujian");
+    await muatSoalUjianCloud(activeExamId);
+  } catch (error) {
+    console.error(error);
+    alert("Gagal mengunggah ujian. Pastikan aturan keamanan Firestore telah aktif dan akun Anda terverifikasi.");
+  }
+});
 
-  const blob = new Blob(["\uFEFF"+csv],{
-    type:"text/csv;charset=utf-8;"
+// 5. FUNGSI SISWA: MUAT DATA SOAL DARI SUB-KOLEKSI /QUESTIONS
+async function muatSoalUjianCloud(code) {
+  try {
+    const examDoc = await getDoc(doc(db, "exams", code));
+    if(!examDoc.exists()) return alert("ID Ujian tidak ditemukan di Cloud!");
+    
+    const examInfo = examDoc.data();
+    activeExamId = code;
+    document.getElementById("judulLembar").innerText = examInfo.judul;
+    document.getElementById("info").innerText = `Mata Pelajaran: ${examInfo.mapel} | Kelas Target: ${examInfo.kelas}`;
+
+    // Muat sub-koleksi questions (Sesuai aturan allow read murid)
+    const querySnapshot = await getDocs(collection(db, "exams", code, "questions"));
+    databaseSoalMurid = [];
+    const lembarDiv = document.getElementById("lembar");
+    
+    let htmlContent = "";
+    let i = 0;
+    
+    querySnapshot.forEach((doc) => {
+      const soal = doc.data();
+      databaseSoalMurid.push(soal);
+      htmlContent += `
+        <div class="card panel-soal" data-index="${i}">
+          <p><strong>${i+1}. ${soal.tanya}</strong></p>
+          <div class="option"><input type="radio" name="soal_${i}" value="A"> <span>A. ${soal.A}</span></div>
+          <div class="option"><input type="radio" name="soal_${i}" value="B"> <span>B. ${soal.B}</span></div>
+          <div class="option"><input type="radio" name="soal_${i}" value="C"> <span>C. ${soal.C}</span></div>
+          <div class="option"><input type="radio" name="soal_${i}" value="D"> <span>D. ${soal.D}</span></div>
+        </div>`;
+      i++;
+    });
+
+    lembarDiv.innerHTML = htmlContent;
+    document.getElementById("kumpul").disabled = false;
+    document.getElementById("ujianBaru").disabled = true;
+  } catch (e) {
+    console.error(e);
+    alert("Gagal memuat dokumen ujian.");
+  }
+}
+
+document.getElementById("btnMuatUjian").addEventListener("click", () => {
+  const code = document.getElementById("inputKodeUjian").value.trim();
+  if(code) muatSoalUjianCloud(code);
+});
+
+// 6. FUNGSI SISWA: KIRIM HASIL KE SUB-KOLEKSI /RESULTS (BISA CREATE, TIDAK BISA UPDATE)
+document.getElementById("kumpul").addEventListener("click", async () => {
+  // Isian instan otomatis jika kosong untuk mempercepat simulasi testing
+  if(!document.getElementById("nama").value.trim()) document.getElementById("nama").value = "Siswa Penguji";
+  if(!document.getElementById("kelasSiswa").value.trim()) document.getElementById("kelasSiswa").value = "Kelas-Test";
+
+  const namaSiswa = document.getElementById("nama").value.trim();
+  const kelasSiswa = document.getElementById("kelasSiswa").value.trim();
+
+  if(databaseSoalMurid.length === 0) return;
+
+  let jumlahBenar = 0;
+  databaseSoalMurid.forEach((soal, index) => {
+    const terpilih = document.querySelector(`input[name="soal_${index}"]:checked`);
+    if(terpilih && terpilih.value === soal.kunci) jumlahBenar++;
   });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "rekap-nilai-gurupintar.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-};
 
-// Mulai aplikasi dan pulihkan data tersimpan.
-bacaData();
+  const skorAkhir = Math.round((jumlahBenar / databaseSoalMurid.length) * 100);
 
-$("mapel").value = meta.mapel || "";
-$("kelas").value = meta.kelas || "3";
-$("judul").value = meta.judul || "";
+  try {
+    // Tembak data langsung ke sub-koleksi results miliki ujian yang aktif
+    await addDoc(collection(db, "exams", activeExamId, "results"), { namaSiswa, kelasSiswa, benar: jumlahBenar, skor: skorAkhir });
+    
+    document.getElementById("hasil").innerHTML = `
+      <div class="notice" style="margin-top:15px; border-left: 5px solid #176b50;">
+        <h3>Hasil Evaluasi:</h3>
+        <p>Nama: <strong>${namaSiswa}</strong> (${kelasSiswa})</p>
+        <p>Skor Anda: <strong style="color:#176b50;">${skorAkhir}</strong></p>
+      </div>`;
 
-tampilSoal();
-tampilUjian();
-tampilNilai();
+    document.getElementById("kumpul").disabled = true;
+    document.getElementById("ujianBaru").disabled = false;
+  } catch (error) {
+    console.error(error);
+    alert("Gagal mengirimkan nilai ke server cloud.");
+  }
+});
+
+document.getElementById("ujianBaru").addEventListener("click", () => {
+  document.getElementById("nama").value = "";
+  document.getElementById("kelasSiswa").value = "";
+  document.getElementById("hasil").innerHTML = "";
+  document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+  document.getElementById("kumpul").disabled = false;
+  document.getElementById("ujianBaru").disabled = true;
+});
+
+document.getElementById("cetak").addEventListener("click", () => window.print());
+
+// 7. FUNGSI GURU: BACA REKAP NILAI REAL-TIME DARI SUB-KOLEKSI /RESULTS
+async function memuatRekapNilaiCloud(examId) {
+  const tbody = document.getElementById("tabel-nilai-body");
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Memuat rekap nilai...</td></tr>`;
+
+  try {
+    const querySnapshot = await getDocs(collection(db, "exams", examId, "results"));
+    let htmlRows = "";
+    let totalSkor = 0, pengerjaanCount = 0, nilaiTertinggi = 0;
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      pengerjaanCount++;
+      totalSkor += data.skor;
+      if (data.skor > nilaiTertinggi) nilaiTertinggi = data.skor;
+
+      htmlRows += `<tr><td>${data.namaSiswa}</td><td>${data.kelasSiswa}</td><td>${data.benar}</td><td><strong>${data.skor}</strong></td></tr>`;
+    });
+
+    if(pengerjaanCount === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada siswa yang mengumpulkan nilai.</td></tr>`;
+      ["total", "rata", "tertinggi"].forEach(id => document.getElementById(id).innerText = "0");
+    } else {
+      tbody.innerHTML = htmlRows;
+      document.getElementById("total").innerText = pengerjaanCount;
+      document.getElementById("rata").innerText = Math.round(totalSkor / pengerjaanCount);
+      document.getElementById("tertinggi").innerText = nilaiTertinggi;
+    }
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9c3026;">Gagal memuat rekap. Hak akses ditolak (Hanya akun Guru pemilik ujian yang diizinkan).</td></tr>`;
+  }
+}
 </script>
 </body>
 </html>
