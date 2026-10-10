@@ -451,6 +451,34 @@ async function memuatRekapNilaiCloud(examId) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9c3026;">Gagal memuat rekap. Hak akses ditolak (Hanya akun Guru pemilik ujian yang diizinkan).</td></tr>`;
   }
 }
+ // ==========================================
+// KODE AMAN AKTIVASI MODE GURU VIA URL
+// ==========================================
+function cekAksesGuru() {
+    // Membaca parameter rahasia dari link URL web
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusGuru = urlParams.get('mode');
+
+    // Jika di akhir link web ditambahkan ?mode=guru
+    if (statusGuru === 'bagusmai') {
+        const authStatus = document.getElementById("auth-status");
+        if(authStatus) authStatus.innerText = "Mode Akses Guru Aktif (Verified)";
+
+        const navNilai = document.getElementById("nav-nilai");
+        if(navNilai) navNilai.classList.remove("hidden");
+
+        const btnSimpan = document.getElementById("simpan");
+        const btnHapus = document.getElementById("hapusSemua");
+        if(btnSimpan) btnSimpan.disabled = false;
+        if(btnHapus) btnHapus.disabled = false;
+        
+        console.log("Akses guru berhasil diaktifkan melalui URL.");
+    }
+}
+
+// Jalankan fungsi setelah semua elemen HTML dan Firebase selesai dimuat
+setTimeout(cekAksesGuru, 800);
+// ==========================================
 </script>
 </body>
 </html>
